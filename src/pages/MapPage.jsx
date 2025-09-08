@@ -7,6 +7,8 @@ import L from 'leaflet'
 const TILE_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
 const ATTR = '&copy; OpenStreetMap contributors &copy; CARTO'
 
+const ambientOffset = (pos) => pos ? [pos[0] + 0.0006, pos[1] + 0.0006] : null
+
 export default function MapPage() {
   const drops = useStore(s => s.drops)
   const navigate = useNavigate()
@@ -17,16 +19,14 @@ export default function MapPage() {
   const [myPos, setMyPos] = useState(null)
   const mapRef = useRef(null)
 
-  // CSS marker icons
   const neonIcon = useMemo(() => (color='default') => L.divIcon({
-    className: 'neon-pin ' + (color==='purple'?'purple': color==='green'?'green': color==='pink'?'pink':''),
+    className: 'neon-pin ' + (color==='purple'?'purple': color==='green'?'green': color==='pink'?'pink': color==='yellow'?'yellow':''),
     html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
   const myIcon = useMemo(() => L.divIcon({
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
-  // Live location
   useEffect(()=>{
     if (!navigator.geolocation) return
     const id = navigator.geolocation.watchPosition(
@@ -36,23 +36,21 @@ export default function MapPage() {
     return ()=> navigator.geolocation.clearWatch(id)
   },[])
 
-  // Recalculate map size on expand/collapse (odpravi belino)
   useEffect(()=>{
     if (!mapRef.current) return
     setTimeout(()=> mapRef.current.invalidateSize(), 220)
   }, [expanded])
 
-  // Support for ?focus=<id> → “Show on map”
+  // Show on map (?focus=id)
   useEffect(()=>{
     const p = new URLSearchParams(location.search)
     const focus = p.get('focus')
     if (focus && mapRef.current){
       const d = drops.find(x=>x.id===focus)
       if (!d) return
-      const lat = d.type==='AMBIENT' && myPos ? myPos[0] : d.lat
-      const lng = d.type==='AMBIENT' && myPos ? myPos[1] : d.lng
-      if (lat!=null && lng!=null){
-        mapRef.current.flyTo([lat,lng], 16, {animate:true})
+      const ll = d.type==='AMBIENT' ? ambientOffset(myPos) : [d.lat, d.lng]
+      if (ll && ll[0]!=null){
+        mapRef.current.flyTo(ll, 16, {animate:true})
         setExpanded(true)
       }
     }
@@ -70,7 +68,7 @@ export default function MapPage() {
   }
 
   const openDetails = (d)=> navigate(`/drop/${d.id}`)
-  const latlngFor = (d) => (d.type==='AMBIENT' ? (myPos||null) : [d.lat, d.lng])
+  const latlngFor = (d) => d.type==='AMBIENT' ? ambientOffset(myPos) : [d.lat, d.lng]
 
   return (
     <div className={`page-wrap ${expanded ? 'map-expanded' : ''}`}>
@@ -105,15 +103,15 @@ export default function MapPage() {
             {myPos && <Marker position={myPos} icon={myIcon}><Popup>You are here</Popup></Marker>}
           </MapContainer>
 
-          {/* ALWAYS-VISIBLE TOP-RIGHT CONTROLS */}
+          {/* Top-right controls */}
           <div className="map-top-right">
-            <button className="fab-round" title="Legend" onClick={()=>setShowLegend(v=>!v)}>ℹ</button>
+            <button className="fab-round" title="Legend" onClick={()=>setShowLegend(v=>!v)}>i</button>
             <button className="fab-round" title="Center me" onClick={centerMe}>◎</button>
             <button className="pill-top" onClick={()=>setExpanded(v=>!v)}>{expanded?'Collapse':'Expand'}</button>
           </div>
 
           {showLegend && (
-            <div style={{position:'absolute',right:8,top:56,background:'rgba(16,24,33,.92)',
+            <div style={{position:'absolute',right:8,top:62,background:'rgba(16,24,33,.92)',
                          border:'1px solid #1b2b3a',borderRadius:12,padding:'8px 10px',color:'#9FB3C8',zIndex:5000}}>
               Legend:&nbsp;
               <span className="badge partner">Partner</span>&nbsp;

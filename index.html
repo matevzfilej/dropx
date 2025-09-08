@@ -36,7 +36,7 @@
       /* EXPAND – brez belega roba in vedno dosegljiv top-right UI */
       .map-expanded{overflow:hidden}
       .map-expanded .map-card{margin:0;border-left:none;border-right:none;border-bottom:none;border-top:1px solid var(--stroke);border-radius:0}
-      .map-expanded .map-wrap{height:calc(100vh - 190px)!important}
+      .map-expanded .map-wrap{height:calc(100vh - 170px)!important} /* malo manj kot prej */
       .map-expanded .section-title, .map-expanded .drop-card{display:none}
 
       .section-title{padding:8px 16px;color:var(--muted);font-weight:800}
@@ -57,13 +57,11 @@
       .btn.ghost{background:var(--card2);color:var(--text);border:1px solid var(--stroke)}
 
       /* map top-right controls (HIGH z-index to stay visible) */
-      .map-top-right{
-        position:absolute; right:8px; top:8px; display:flex; gap:8px; z-index:5000;
-      }
+      .map-top-right{position:absolute; right:8px; top:8px; display:flex; gap:8px; z-index:5000;}
       .fab-round{
-        width:38px; height:38px; border-radius:999px; display:grid; place-items:center;
-        background:var(--cyan); color:#0A0F14; font-weight:900; border:none; cursor:pointer;
-        box-shadow:0 8px 18px rgba(58,242,226,.3)
+        width:46px;height:46px;border-radius:999px;display:grid;place-items:center;
+        background:var(--cyan);color:#0A0F14;font-weight:900;border:none;cursor:pointer;
+        box-shadow:0 8px 18px rgba(58,242,226,.3); font-size:18px;
       }
       .pill-top{
         background:var(--card2); color:var(--text); border:1px solid var(--stroke);
@@ -77,6 +75,7 @@
       .neon-pin.purple{background:var(--vio);box-shadow:0 0 8px var(--vio),0 0 18px rgba(143,106,255,.6)}
       .neon-pin.green{background:var(--green);box-shadow:0 0 8px var(--green),0 0 18px rgba(45,238,111,.6)}
       .neon-pin.pink{background:var(--pink);box-shadow:0 0 8px var(--pink),0 0 18px rgba(255,77,201,.6)}
+      .neon-pin.yellow{background:var(--yellow);box-shadow:0 0 8px var(--yellow),0 0 18px rgba(255,209,102,.6)}
       .my-pos{width:14px;height:14px;border-radius:50%;background:var(--cyan);border:2px solid #fff;box-shadow:0 0 0 6px rgba(58,242,226,.25);animation:pulse 1.8s ease-out infinite}
       @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(58,242,226,.35)}100%{box-shadow:0 0 0 18px rgba(58,242,226,0)}}
 
@@ -87,6 +86,10 @@
       .toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);
         background:var(--card2);border:1px solid var(--cyan);padding:10px 16px;border-radius:12px;z-index:6000;
         color:var(--cyan);font-weight:800}
+      /* Modal (wallet) */
+      .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);display:grid;place-items:center;z-index:4000}
+      .modal{width:min(480px,92vw);background:var(--card);border:1px solid var(--stroke);border-radius:18px;padding:16px}
+      .modal .title{font-weight:900;font-size:18px;margin-bottom:10px}
     </style>
   </head>
   <body>

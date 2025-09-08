@@ -12,14 +12,12 @@ export const useStore = create((set, get) => ({
       type:'PARTNER', reward:'1 brezplačni Isotonic', radius:120, color:'purple',
       claims:7, cap:1000 },
 
-    // AMBIENT: marker = na tvoji lokaciji, claim anywhere (radius null)
     { id:'ambient-anywhere', title:'Mystery Orb', subtitle:'Ambient reward appears…',
       lat:null, lng:null, status:'ACTIVE', type:'AMBIENT', reward:'3 RION', radius:null, color:'pink',
       claims:3, cap:1000 },
 
-    // CRYPTO: tudi brez radija (dosegljivo vsem)
     { id:'rion-starter', title:'3 RION — Starter Pack', subtitle:'Crypto',
-      lat:46.0569, lng:14.5058, status:'ACTIVE', type:'CRYPTO', reward:'3 RION', radius:null, color:'default',
+      lat:46.0569, lng:14.5058, status:'ACTIVE', type:'CRYPTO', reward:'3 RION', radius:null, color:'yellow',
       claims:12, cap:1000 },
 
     { id:'mb-center', title:'Maribor Special', subtitle:'Glavni trg',

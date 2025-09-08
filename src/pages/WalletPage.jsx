@@ -1,10 +1,28 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
 
 export default function WalletPage(){
   const wallet = useStore(s=>s.wallet)
   const [openId, setOpenId] = useState(null)
   const current = wallet.find(w => w.id === openId)
+  const qrRef = useRef(null)
+
+  // generate QR when modal opens
+  useEffect(()=>{
+    let mounted = true
+    async function gen(){
+      if (!current || !qrRef.current) return
+      const { default: QRCode } = await import('qrcode')
+      try{
+        await QRCode.toCanvas(qrRef.current, current.code, {
+          width: 220, margin: 1,
+          color: { dark:'#E6F1FF', light:'#121A23' }
+        })
+      }catch(e){ console.error(e) }
+    }
+    gen()
+    return ()=>{ mounted=false }
+  }, [current])
 
   return (
     <div className="page-wrap">
@@ -38,9 +56,8 @@ export default function WalletPage(){
               <button className="btn ghost" onClick={()=>setOpenId(null)}>✕</button>
             </div>
             <div style={{textAlign:'center',marginTop:6,fontWeight:800}}>{current.title}</div>
-            <div style={{height:12}}></div>
-            <div style={{height:180, borderRadius:14, background:'#1b2530', border:'1px solid var(--stroke)', marginTop:10, display:'grid',placeItems:'center', color:'var(--muted)'}}>
-              QR PREVIEW
+            <div style={{display:'grid',placeItems:'center',marginTop:10}}>
+              <canvas ref={qrRef} width="220" height="220" style={{borderRadius:12,background:'#1b2530',border:'1px solid var(--stroke)'}} />
             </div>
             <div className="drop-card" style={{margin:'14px 0 0', textAlign:'center', background:'var(--card2)'}}>
               <div>Code:</div>
