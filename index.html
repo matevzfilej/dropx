@@ -32,18 +32,19 @@
 
       .map-card{margin:12px 16px;background:var(--card);border:1px solid var(--stroke);border-radius:14px;padding:8px}
       .map-wrap{height:260px;position:relative;border-radius:10px;overflow:hidden}
-      /* EXPAND – brez belega roba in vedno zapreš */
-      .map-expanded{overflow:hidden}
-      .map-expanded .map-card{margin:0;border-left:none;border-right:none;border-bottom:none;border-top:1px solid var(--stroke);border-radius:0}
-      .map-expanded .map-wrap{height:calc(100vh - 150px)!important}
-      .map-expanded .section-title, .map-expanded .drop-card{display:none}
+/* EXPAND – brez belega roba in vedno na dosegu */
+.map-expanded{overflow:hidden}
+.map-expanded .map-card{
+  margin:0;border-left:none;border-right:none;border-bottom:none;
+  border-top:1px solid var(--stroke);border-radius:0
+}
+/* prilagojena višina, da se Controls vidijo na vseh napravah */
+.map-expanded .map-wrap{height:calc(100vh - 190px)!important}
 
-      .map-controls .pill{background:var(--card2);color:var(--text);padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);font-size:12px;cursor:pointer}
-      .map-controls .pill:hover{border-color:var(--cyan);box-shadow:0 0 12px rgba(58,242,226,.3)}
-      .map-top-right{position:absolute;right:8px;top:8px;display:flex;gap:8px;z-index:1000}
-      .fab-round{width:38px;height:38px;border-radius:999px;display:grid;place-items:center;
-        background:var(--cyan);color:#0A0F14;font-weight:900;border:none;cursor:pointer;
-        box-shadow:0 8px 18px rgba(58,242,226,.3)}
+/* map controls: dodamo varianto za top-right, da je Collapse vedno dosegljiv */
+.map-controls .pill{background:var(--card2);color:var(--text);padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);font-size:12px;cursor:pointer}
+.map-controls .pill:hover{border-color:var(--cyan);box-shadow:0 0 12px rgba(58,242,226,.3)}
+
 
       .section-title{padding:8px 16px;color:var(--muted);font-weight:800}
       .drop-card{margin:8px 16px;background:var(--card);border:1px solid var(--stroke);border-radius:16px;padding:14px}

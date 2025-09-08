@@ -38,7 +38,7 @@ export default function WalletPage(){
               <button className="btn ghost" onClick={()=>setOpenId(null)}>✕</button>
             </div>
             <div style={{textAlign:'center',marginTop:6,fontWeight:800}}>{current.title}</div>
-            <div style="height:12px"></div>
+            <div style={{height:12}}></div>
             <div style={{height:180, borderRadius:14, background:'#1b2530', border:'1px solid var(--stroke)', marginTop:10, display:'grid',placeItems:'center', color:'var(--muted)'}}>
               QR PREVIEW
             </div>
