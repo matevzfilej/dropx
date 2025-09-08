@@ -27,44 +27,60 @@ export default function MapPage() {
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
-  // live location (watch + fallback)
+  // Geolokacija: watch + fallback (da vedno nekaj dobimo)
   useEffect(()=>{
     if (!navigator.geolocation) return
     const id = navigator.geolocation.watchPosition(
       pos => setMyPos([pos.coords.latitude, pos.coords.longitude]),
       ()=>{}, { enableHighAccuracy:true, maximumAge:5000 }
     )
+    // 1x fallback - če watch še ni dal koordinate
+    setTimeout(()=>{
+      if (!myPos) {
+        navigator.geolocation.getCurrentPosition(
+          pos => setMyPos([pos.coords.latitude, pos.coords.longitude]),
+          ()=>{}, { enableHighAccuracy:true, timeout:8000 }
+        )
+      }
+    }, 1500)
     return ()=> navigator.geolocation.clearWatch(id)
-  },[])
+  },[]) // eslint-disable-line
 
-  // Fix sizing after expand/collapse
+  // popravi velikost po expand/collapse (odpravi belino)
   useEffect(()=>{
     if (!mapRef.current) return
     setTimeout(()=> mapRef.current.invalidateSize(), 250)
   }, [expanded])
 
-  // Support for ?focus=<id> (Show on map)
+  // Show on map (?focus=id) – fokusiramo pravi pin
   useEffect(()=>{
     const p = new URLSearchParams(location.search)
     const focus = p.get('focus')
-    if (focus && mapRef.current){
-      const d = drops.find(x=>x.id===focus)
-      if (!d) return
-      const ll = d.type==='AMBIENT' ? ambientOffset(myPos) : [d.lat, d.lng]
-      if (ll && ll[0]!=null){
-        mapRef.current.flyTo(ll, 16, {animate:true})
-        setExpanded(true)
-      } else if (d.type==='AMBIENT' && !myPos){
-        showToast('Location needed for Ambient drop')
-      }
+    if (!focus || !mapRef.current) return
+    const d = drops.find(x=>x.id===focus)
+    if (!d) return
+
+    const ll = d.type==='AMBIENT' ? ambientOffset(myPos) : [d.lat, d.lng]
+    if (ll && ll[0]!=null){
+      setExpanded(true)
+      setTimeout(()=> mapRef.current.flyTo(ll, 16, {animate:true}), 50)
+    } else if (d.type==='AMBIENT' && !myPos){
+      showToast('Turn on location to show Ambient drop on map')
     }
   },[location.search, drops, myPos])
 
   function centerMe(){
-    if (myPos && mapRef.current) { mapRef.current.flyTo(myPos, 15, {animate:true}); return }
+    if (myPos && mapRef.current) {
+      mapRef.current.panTo(myPos, {animate:true})
+      setTimeout(()=> mapRef.current.flyTo(myPos, 15, {animate:true}), 100)
+      return
+    }
     if (navigator.geolocation){
       navigator.geolocation.getCurrentPosition(
-        pos => { const p=[pos.coords.latitude,pos.coords.longitude]; setMyPos(p); mapRef.current?.flyTo(p, 15, {animate:true}) },
+        pos => {
+          const p=[pos.coords.latitude,pos.coords.longitude]
+          setMyPos(p); mapRef.current?.flyTo(p, 15, {animate:true})
+        },
         ()=> showToast('Enable location to use Center me'),
         { enableHighAccuracy:true, timeout:10000 }
       )

@@ -33,11 +33,10 @@
       .map-card{margin:12px 16px;background:var(--card);border:1px solid var(--stroke);border-radius:14px;padding:8px}
       .map-wrap{height:260px;position:relative;border-radius:10px;overflow:hidden}
 
-      /* EXPAND – brez belega roba, controls vedno vidni */
-      .map-expanded{overflow:hidden;padding-bottom:0} /* odstrani extra spodnji padding */
+      /* EXPAND – brez belega roba (odstranimo padding spodaj) */
+      .map-expanded{overflow:hidden;padding-bottom:0}
       .map-expanded .map-card{margin:0;border-left:none;border-right:none;border-bottom:none;border-top:1px solid var(--stroke);border-radius:0}
-      /* višina = cel zaslon - (header ~86px + zgornji padding + top controls). Po potrebi korigiraj  */
-      .map-expanded .map-wrap{height:calc(100vh - 136px)!important}
+      .map-expanded .map-wrap{height:calc(100vh - 128px)!important} /* višina mape v expanded načinu */
       .map-expanded .section-title, .map-expanded .drop-card{display:none}
 
       .section-title{padding:8px 16px;color:var(--muted);font-weight:800}
@@ -57,7 +56,7 @@
         box-shadow:0 0 8px var(--cyan),0 0 18px rgba(58,242,226,.6)}
       .btn.ghost{background:var(--card2);color:var(--text);border:1px solid var(--stroke)}
 
-      /* map top-right controls (HIGH z-index) */
+      /* map top-right controls */
       .map-top-right{position:absolute; right:8px; top:8px; display:flex; gap:8px; z-index:5000;}
       .fab-round{
         width:46px;height:46px;border-radius:999px;display:grid;place-items:center;
