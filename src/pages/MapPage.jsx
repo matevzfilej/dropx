@@ -25,18 +25,36 @@ export default function MapPage() {
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
+  // sprotna lokacija
   useEffect(()=>{
     if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const p = [pos.coords.latitude, pos.coords.longitude]
-        setMyPos(p)
-        if (mapRef.current) mapRef.current.flyTo(p, 14, { animate:true })
-      },
-      ()=>{}, { enableHighAccuracy:true, maximumAge:15000 }
+    const id = navigator.geolocation.watchPosition(
+      pos => setMyPos([pos.coords.latitude, pos.coords.longitude]),
+      ()=>{}, { enableHighAccuracy:true, maximumAge:5000 }
     )
+    return ()=> navigator.geolocation.clearWatch(id)
   },[])
 
+  // prvo centriranje + fallback za Center me
+  function ensureLocateAndCenter(){
+    if (myPos && mapRef.current){
+      mapRef.current.flyTo(myPos, 15, {animate:true})
+      return
+    }
+    if (navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const p=[pos.coords.latitude,pos.coords.longitude]
+          setMyPos(p)
+          mapRef.current?.flyTo(p, 15, {animate:true})
+        },
+        ()=> showToast('Enable location to use Center me'),
+        { enableHighAccuracy:true, timeout:10000 }
+      )
+    }
+  }
+
+  // podpora za ?focus=<id>
   useEffect(()=>{
     const p = new URLSearchParams(location.search)
     const focus = p.get('focus')
@@ -53,14 +71,8 @@ export default function MapPage() {
     }
   },[location.search, drops, myPos])
 
-  const centerMe = () => {
-    if (myPos && mapRef.current) mapRef.current.flyTo(myPos, 15, {animate:true})
-    else alert('Location not available')
-  }
-
   const openDetails = (d)=> navigate(`/drop/${d.id}`)
-
-  const getMarkerLatLng = (d) => (d.type==='AMBIENT' ? (myPos||null) : [d.lat, d.lng])
+  const getMarkerLatLng = (d)=> (d.type==='AMBIENT' ? (myPos||null) : [d.lat, d.lng])
 
   return (
     <div className={`page-wrap ${expanded ? 'map-expanded' : ''}`}>
@@ -76,7 +88,6 @@ export default function MapPage() {
                         whenCreated={m=>mapRef.current=m}
                         style={{height:'100%', width:'100%'}}>
             <TileLayer url={TILE_DARK} attribution={ATTR}/>
-
             {drops.map(d=>{
               const ll = getMarkerLatLng(d)
               if (!ll) return null
@@ -95,11 +106,13 @@ export default function MapPage() {
             {myPos && <Marker position={myPos} icon={myIcon}><Popup>You are here</Popup></Marker>}
           </MapContainer>
 
+          {/* top-right */}
           <div className="map-top-right">
             <button className="fab-round" title="Legend" onClick={()=>setShowLegend(v=>!v)}>ℹ</button>
-            <button className="fab-round" title="Center me" onClick={centerMe}>◎</button>
+            <button className="fab-round" title="Center me" onClick={ensureLocateAndCenter}>◎</button>
           </div>
 
+          {/* bottom-right */}
           <div className="map-controls" style={{position:'absolute',right:8,bottom:8,display:'flex',gap:8,zIndex:1000}}>
             <button className="pill" onClick={()=>setExpanded(v=>!v)}>
               {expanded?'Collapse Map':'Expand Map'}
@@ -110,10 +123,10 @@ export default function MapPage() {
             <div style={{position:'absolute',right:8,top:56,background:'rgba(16,24,33,.92)',
                          border:'1px solid #1b2b3a',borderRadius:12,padding:'8px 10px',color:'#9FB3C8',zIndex:1000}}>
               Legend:&nbsp;
-              <span style={{color:'#2DEE6F'}}>●</span> Partner&nbsp;•&nbsp;
-              <span style={{color:'#FF4DC9'}}>●</span> Ambient&nbsp;•&nbsp;
-              <span style={{color:'#8F6AFF'}}>●</span> Sponsored&nbsp;•&nbsp;
-              <span style={{color:'#3AF2E2'}}>◎</span> You
+              <span className="badge partner">Partner</span>&nbsp;
+              <span className="badge ambient">Ambient</span>&nbsp;
+              <span className="badge crypto">Crypto</span>&nbsp;•&nbsp;
+              <span style={{color:'#3AF2E2'}}>◎ You</span>
             </div>
           )}
         </div>
@@ -140,7 +153,12 @@ export default function MapPage() {
           </div>
         </div>
       ))}
-      <div style={{height:80}}/>
+      <div style={{height:84}}/>
     </div>
   )
+}
+
+function showToast(msg){
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2000)
 }

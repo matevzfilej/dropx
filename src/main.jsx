@@ -10,7 +10,7 @@ import DropDetails from './pages/DropDetails.jsx'
 function Layout(){
   return (
     <div style={{flex:1, display:'flex', flexDirection:'column'}}>
-      <div style={{flex:1, position:'relative'}}>
+      <div style={{flex:1}}>
         <Routes>
           <Route path="/" element={<MapPage/>} />
           <Route path="/drops" element={<DropsPage/>} />
