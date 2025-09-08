@@ -4,7 +4,6 @@ import { useStore } from '../store'
 import { useNavigate, useLocation } from 'react-router-dom'
 import L from 'leaflet'
 
-// Dark tiles (brez API ključa)
 const TILE_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
 const ATTR = '&copy; OpenStreetMap contributors &copy; CARTO'
 
@@ -18,7 +17,6 @@ export default function MapPage() {
   const [myPos, setMyPos] = useState(null)
   const mapRef = useRef(null)
 
-  // Neon CSS markerji
   const neonIcon = useMemo(() => (color='default') => L.divIcon({
     className: 'neon-pin ' + (color==='purple'?'purple': color==='green'?'green':''),
     html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
@@ -27,28 +25,45 @@ export default function MapPage() {
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
-  useEffect(()=>{ // moja lokacija
+  // Lokacija + prvi auto center
+  useEffect(()=>{
     if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition(
-      pos => setMyPos([pos.coords.latitude, pos.coords.longitude]),
+      pos => {
+        const p = [pos.coords.latitude, pos.coords.longitude]
+        setMyPos(p)
+        if (mapRef.current) mapRef.current.flyTo(p, 14, { animate:true })
+      },
       ()=>{}, { enableHighAccuracy:true, maximumAge:15000 }
     )
   },[])
 
-  useEffect(()=>{ // podpora za ?focus=<id>
+  // Podpora za ?focus=<id>
+  useEffect(()=>{
     const p = new URLSearchParams(location.search)
     const focus = p.get('focus')
     if (focus && mapRef.current){
       const d = drops.find(x=>x.id===focus)
-      if (d){ mapRef.current.setView([d.lat,d.lng], 15, {animate:true}); setExpanded(true) }
+      if (d){
+        const lat = d.type==='AMBIENT' && myPos ? myPos[0] : d.lat
+        const lng = d.type==='AMBIENT' && myPos ? myPos[1] : d.lng
+        if (lat!=null && lng!=null){
+          mapRef.current.flyTo([lat,lng], 15, {animate:true})
+          setExpanded(true)
+        }
+      }
     }
-  },[location.search, drops])
+  },[location.search, drops, myPos])
 
-  function centerMe(){
-    if (myPos && mapRef.current) mapRef.current.setView(myPos, 15, {animate:true})
+  const centerMe = () => {
+    if (myPos && mapRef.current) mapRef.current.flyTo(myPos, 15, {animate:true})
     else alert('Location unavailable yet')
   }
+
   const openDetails = (d)=> navigate(`/drop/${d.id}`)
+
+  // AMBIENT marker = moja lokacija
+  const getMarkerLatLng = (d) => (d.type==='AMBIENT' ? (myPos||null) : [d.lat, d.lng])
 
   return (
     <div className={`page-wrap ${expanded ? 'map-expanded' : ''}`}>
@@ -60,35 +75,51 @@ export default function MapPage() {
 
       <div className="map-card">
         <div className="map-wrap" id="map">
-          <MapContainer center={[46.54,15.51]} zoom={13} whenCreated={m=>mapRef.current=m}
+          <MapContainer center={[46.54,15.51]} zoom={13}
+                        whenCreated={m=>mapRef.current=m}
                         style={{height:'100%', width:'100%'}}>
             <TileLayer url={TILE_DARK} attribution={ATTR}/>
-            {drops.map(d=>(
-              <Marker key={d.id} position={[d.lat,d.lng]} icon={neonIcon(d.color)}>
-                <Popup>
-                  <b>{d.title}</b><br/>
-                  {d.subtitle}<br/>
-                  {d.lat.toFixed(4)}, {d.lng.toFixed(4)}<br/>
-                  <span style={{textDecoration:'underline',cursor:'pointer'}} onClick={()=>openDetails(d)}>View</span>
-                </Popup>
-              </Marker>
-            ))}
+
+            {drops.map(d=>{
+              const ll = getMarkerLatLng(d)
+              if (!ll) return null
+              return (
+                <Marker key={d.id} position={ll} icon={neonIcon(d.color)}>
+                  <Popup>
+                    <b>{d.title}</b><br/>
+                    {d.subtitle}<br/>
+                    {ll[0].toFixed(4)}, {ll[1].toFixed(4)}<br/>
+                    <span style={{textDecoration:'underline',cursor:'pointer'}}
+                          onClick={()=>openDetails(d)}>View</span>
+                  </Popup>
+                </Marker>
+              )
+            })}
             {myPos && <Marker position={myPos} icon={myIcon}><Popup>You are here</Popup></Marker>}
           </MapContainer>
 
-          <div className="map-controls" style={{position:'absolute',right:8,bottom:8,display:'flex',gap:8}}>
-            <button className="pill" onClick={()=>setShowLegend(v=>!v)}>{showLegend?'Hide legend':'Legend'}</button>
-            <button className="pill" onClick={()=>setExpanded(v=>!v)}>{expanded?'Collapse Map':'Expand Map'}</button>
-            <button className="pill" onClick={centerMe}>Center me</button>
+          {/* TOP-RIGHT FABs (nad mapo) */}
+          <div className="map-top-right">
+            <button className="fab-round" title="Legend" onClick={()=>setShowLegend(v=>!v)}>ℹ</button>
+            <button className="fab-round" title="Center me" onClick={centerMe}>◎</button>
           </div>
 
+          {/* Bottom-right pill */}
+          <div className="map-controls" style={{position:'absolute',right:8,bottom:8,display:'flex',gap:8,zIndex:1000}}>
+            <button className="pill" onClick={()=>setExpanded(v=>!v)}>
+              {expanded?'Collapse Map':'Expand Map'}
+            </button>
+          </div>
+
+          {/* Legend */}
           {showLegend && (
-            <div style={{position:'absolute',right:8,top:8,background:'rgba(16,24,33,.92)',
-                         border:'1px solid #1b2b3a',borderRadius:12,padding:'8px 10px',color:'#9FB3C8'}}>
-              Legend: <span style={{color:'#2DEE6F'}}>●</span> Partner •
-              <span style={{color:'#8F6AFF'}}> ●</span> Sponsored •
-              <span style={{color:'#3AF2E2'}}> ●</span> Ambient •
-              <span style={{color:'#3AF2E2'}}> ◎</span> You
+            <div style={{position:'absolute',right:8,top:56,background:'rgba(16,24,33,.92)',
+                         border:'1px solid #1b2b3a',borderRadius:12,padding:'8px 10px',color:'#9FB3C8',zIndex:1000}}>
+              Legend:&nbsp;
+              <span style={{color:'#2DEE6F'}}>●</span> Partner&nbsp;•&nbsp;
+              <span style={{color:'#8F6AFF'}}>●</span> Sponsored&nbsp;•&nbsp;
+              <span style={{color:'#3AF2E2'}}>●</span> Ambient&nbsp;•&nbsp;
+              <span style={{color:'#3AF2E2'}}>◎</span> You
             </div>
           )}
         </div>
@@ -108,7 +139,7 @@ export default function MapPage() {
                 <span className="badge">{d.subtitle}</span>
               </div>
               <div style={{color:'#9FB3C8',fontSize:12,marginTop:8}}>
-                📍 radius {d.radius ?? '∞'} m
+                📍 radius {d.radius ?? '∞'} m • {d.reward || ''}
               </div>
             </div>
             <button className="btn ghost" onClick={()=>openDetails(d)}>View</button>

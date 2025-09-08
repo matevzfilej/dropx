@@ -55,15 +55,25 @@
       .section-title{padding:8px 16px;color:var(--muted);font-weight:800}
       .drop-card{margin:8px 16px;background:var(--card);border:1px solid var(--stroke);border-radius:16px;padding:14px}
 
-      /* Neon markers (pure CSS) */
+      /* Neon markers */
       .neon-pin{width:14px;height:14px;border-radius:50%;background:#3AF2E2;box-shadow:0 0 8px #3AF2E2,0 0 18px rgba(58,242,226,.6);border:2px solid rgba(255,255,255,.7)}
       .neon-pin.purple{background:#8F6AFF;box-shadow:0 0 8px #8F6AFF,0 0 18px rgba(143,106,255,.6)}
       .neon-pin.green{background:#2DEE6F;box-shadow:0 0 8px #2DEE6F,0 0 18px rgba(45,238,111,.6)}
       .my-pos{width:14px;height:14px;border-radius:50%;background:#3AF2E2;border:2px solid #fff;box-shadow:0 0 0 6px rgba(58,242,226,.25);animation:pulse 1.8s ease-out infinite}
       @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(58,242,226,.35)}100%{box-shadow:0 0 0 18px rgba(58,242,226,0)}}
 
-      /* Make attribution tiny (must be visible for OSM license) */
+      /* Attribution tiny (ostati mora vidno) */
       .leaflet-control-attribution{font-size:10px;opacity:.45;background:transparent!important}
+
+      /* Top-right FABs nad mapo */
+      .map-top-right{
+        position:absolute; right:8px; top:8px; display:flex; gap:8px; z-index:1000;
+      }
+      .fab-round{
+        width:38px; height:38px; border-radius:999px; display:grid; place-items:center;
+        background:var(--accent); color:#0A0F14; font-weight:900; border:none; cursor:pointer;
+        box-shadow:0 8px 18px rgba(58,242,226,.3);
+      }
     </style>
   </head>
   <body>
