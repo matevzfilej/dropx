@@ -17,15 +17,16 @@ export default function MapPage() {
   const [myPos, setMyPos] = useState(null)
   const mapRef = useRef(null)
 
+  // CSS marker icons
   const neonIcon = useMemo(() => (color='default') => L.divIcon({
-    className: 'neon-pin ' + (color==='purple'?'purple': color==='green'?'green':''),
+    className: 'neon-pin ' + (color==='purple'?'purple': color==='green'?'green': color==='pink'?'pink':''),
     html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
   const myIcon = useMemo(() => L.divIcon({
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
-  // sprotna lokacija
+  // keep location fresh
   useEffect(()=>{
     if (!navigator.geolocation) return
     const id = navigator.geolocation.watchPosition(
@@ -35,44 +36,36 @@ export default function MapPage() {
     return ()=> navigator.geolocation.clearWatch(id)
   },[])
 
-  // prvo centriranje + fallback za Center me
-  function ensureLocateAndCenter(){
-    if (myPos && mapRef.current){
-      mapRef.current.flyTo(myPos, 15, {animate:true})
-      return
+  // Show on map (?focus=id)
+  useEffect(()=>{
+    const p = new URLSearchParams(location.search)
+    const focus = p.get('focus')
+    if (focus && mapRef.current){
+      const d = drops.find(x=>x.id===focus)
+      if (!d) return
+      const lat = d.type==='AMBIENT' && myPos ? myPos[0] : d.lat
+      const lng = d.type==='AMBIENT' && myPos ? myPos[1] : d.lng
+      if (lat!=null && lng!=null){
+        mapRef.current.flyTo([lat,lng], 16, {animate:true})
+        setExpanded(true)
+      }
     }
+  },[location.search, drops, myPos])
+
+  function centerMe(){
+    if (myPos && mapRef.current) { mapRef.current.flyTo(myPos, 15, {animate:true}); return }
     if (navigator.geolocation){
       navigator.geolocation.getCurrentPosition(
-        pos => {
-          const p=[pos.coords.latitude,pos.coords.longitude]
-          setMyPos(p)
-          mapRef.current?.flyTo(p, 15, {animate:true})
-        },
+        pos => { const p=[pos.coords.latitude,pos.coords.longitude]; setMyPos(p); mapRef.current?.flyTo(p, 15, {animate:true}) },
         ()=> showToast('Enable location to use Center me'),
         { enableHighAccuracy:true, timeout:10000 }
       )
     }
   }
 
-  // podpora za ?focus=<id>
-  useEffect(()=>{
-    const p = new URLSearchParams(location.search)
-    const focus = p.get('focus')
-    if (focus && mapRef.current){
-      const d = drops.find(x=>x.id===focus)
-      if (d){
-        const lat = d.type==='AMBIENT' && myPos ? myPos[0] : d.lat
-        const lng = d.type==='AMBIENT' && myPos ? myPos[1] : d.lng
-        if (lat!=null && lng!=null){
-          mapRef.current.flyTo([lat,lng], 15, {animate:true})
-          setExpanded(true)
-        }
-      }
-    }
-  },[location.search, drops, myPos])
-
   const openDetails = (d)=> navigate(`/drop/${d.id}`)
-  const getMarkerLatLng = (d)=> (d.type==='AMBIENT' ? (myPos||null) : [d.lat, d.lng])
+
+  const latlngFor = (d) => (d.type==='AMBIENT' ? (myPos||null) : [d.lat, d.lng])
 
   return (
     <div className={`page-wrap ${expanded ? 'map-expanded' : ''}`}>
@@ -88,8 +81,9 @@ export default function MapPage() {
                         whenCreated={m=>mapRef.current=m}
                         style={{height:'100%', width:'100%'}}>
             <TileLayer url={TILE_DARK} attribution={ATTR}/>
+
             {drops.map(d=>{
-              const ll = getMarkerLatLng(d)
+              const ll = latlngFor(d)
               if (!ll) return null
               return (
                 <Marker key={d.id} position={ll} icon={neonIcon(d.color)}>
@@ -106,13 +100,11 @@ export default function MapPage() {
             {myPos && <Marker position={myPos} icon={myIcon}><Popup>You are here</Popup></Marker>}
           </MapContainer>
 
-          {/* top-right */}
           <div className="map-top-right">
             <button className="fab-round" title="Legend" onClick={()=>setShowLegend(v=>!v)}>ℹ</button>
-            <button className="fab-round" title="Center me" onClick={ensureLocateAndCenter}>◎</button>
+            <button className="fab-round" title="Center me" onClick={centerMe}>◎</button>
           </div>
 
-          {/* bottom-right */}
           <div className="map-controls" style={{position:'absolute',right:8,bottom:8,display:'flex',gap:8,zIndex:1000}}>
             <button className="pill" onClick={()=>setExpanded(v=>!v)}>
               {expanded?'Collapse Map':'Expand Map'}
@@ -126,7 +118,7 @@ export default function MapPage() {
               <span className="badge partner">Partner</span>&nbsp;
               <span className="badge ambient">Ambient</span>&nbsp;
               <span className="badge crypto">Crypto</span>&nbsp;•&nbsp;
-              <span style={{color:'#3AF2E2'}}>◎ You</span>
+              <span style={{color:'var(--cyan)'}}>◎ You</span>
             </div>
           )}
         </div>
@@ -146,7 +138,7 @@ export default function MapPage() {
                 <span className="badge">{d.subtitle}</span>
               </div>
               <div style={{color:'#9FB3C8',fontSize:12,marginTop:8}}>
-                📍 radius {d.radius ?? '∞'} m • {d.reward || ''}
+                📍 radius {d.radius ?? '∞'} m • {d.reward || ''} • {d.claims}/{d.cap}
               </div>
             </div>
             <button className="btn neon" onClick={()=>openDetails(d)}>View</button>

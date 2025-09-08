@@ -4,21 +4,23 @@ import { useStore } from '../store'
 export default function ProfilePage(){
   const { claimed, rion, used } = useStore.getState().stats()
   return (
-    <div className="screen">
-      <div className="h2">Profile</div>
+    <div className="page-wrap">
+      <div className="header"><div className="title">Profile</div></div>
 
-      <div className="card" style={{display:'grid', gap:6}}>
+      <div className="drop-card" style={{display:'grid', gap:6}}>
         <div style={{fontWeight:800}}>matevz@realdrophunt.com</div>
-        <div style={{color:'#9FB3C8'}}>Allow DropX to access your location for nearby drops</div>
+        <div style={{color:'var(--muted)'}}>Allow DropX to access your location for nearby drops</div>
       </div>
 
-      <div className="card" style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, textAlign:'center'}}>
-        <div><div style={{fontWeight:900, fontSize:18}}>{claimed}</div><div style={{color:'#9FB3C8'}}>Drops Claimed</div></div>
-        <div><div style={{fontWeight:900, fontSize:18}}>{rion}</div><div style={{color:'#9FB3C8'}}>RION Earned</div></div>
-        <div><div style={{fontWeight:900, fontSize:18}}>{used}</div><div style={{color:'#9FB3C8'}}>Rewards Used</div></div>
+      <div className="drop-card" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,textAlign:'center'}}>
+        <div><div style={{fontWeight:900,fontSize:18}}>{claimed}</div><div style={{color:'var(--muted)'}}>Drops Claimed</div></div>
+        <div><div style={{fontWeight:900,fontSize:18}}>{rion}</div><div style={{color:'var(--muted)'}}>RION Earned</div></div>
+        <div><div style={{fontWeight:900,fontSize:18}}>{used}</div><div style={{color:'var(--muted)'}}>Rewards Used</div></div>
       </div>
 
-      <button className="btn grad">Logout</button>
+      <div style={{padding:'0 16px 90px'}}>
+        <button className="btn neon">Logout</button>
+      </div>
     </div>
   )
 }

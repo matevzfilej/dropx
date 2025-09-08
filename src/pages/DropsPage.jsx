@@ -10,7 +10,6 @@ export default function DropsPage(){
   return (
     <div className="page-wrap">
       <div className="header"><div className="title">All Drops</div></div>
-
       {drops.map(d=>(
         <div key={d.id} className="drop-card">
           <div className="row">
@@ -24,7 +23,7 @@ export default function DropsPage(){
                 <span className="badge">{d.subtitle}</span>
               </div>
               <div style={{color:'#9FB3C8',fontSize:12,marginTop:8}}>
-                📍 radius {d.radius ?? '∞'} m • {d.reward || ''}
+                📍 radius {d.radius ?? '∞'} m • {d.reward || ''} • {d.claims}/{d.cap}
               </div>
             </div>
             <div style={{display:'flex', gap:8}}>
