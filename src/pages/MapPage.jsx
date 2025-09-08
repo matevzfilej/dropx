@@ -26,7 +26,7 @@ export default function MapPage() {
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
-  // keep location fresh
+  // Live location
   useEffect(()=>{
     if (!navigator.geolocation) return
     const id = navigator.geolocation.watchPosition(
@@ -35,6 +35,12 @@ export default function MapPage() {
     )
     return ()=> navigator.geolocation.clearWatch(id)
   },[])
+
+  // Expand/collapse → popravimo sizing (brez belega prostora)
+  useEffect(()=>{
+    if (!mapRef.current) return
+    setTimeout(()=> mapRef.current.invalidateSize(), 220)
+  }, [expanded])
 
   // Show on map (?focus=id)
   useEffect(()=>{
@@ -64,7 +70,6 @@ export default function MapPage() {
   }
 
   const openDetails = (d)=> navigate(`/drop/${d.id}`)
-
   const latlngFor = (d) => (d.type==='AMBIENT' ? (myPos||null) : [d.lat, d.lng])
 
   return (

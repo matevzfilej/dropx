@@ -1,36 +1,56 @@
 import React, { useState } from 'react'
 import { useStore } from '../store'
-import QRCode from 'qrcode.react'
 
 export default function WalletPage(){
   const wallet = useStore(s=>s.wallet)
-  const [tab, setTab] = useState('Active') // demo
-
-  const list = wallet // (filteraj po tab-u po želji)
+  const [openId, setOpenId] = useState(null)
+  const current = wallet.find(w => w.id === openId)
 
   return (
-    <div className="screen">
-      <div className="h2">DropX Wallet</div>
+    <div className="page-wrap">
+      <div className="header"><div className="title">DropX Wallet</div></div>
 
-      <div className="tabbar">
-        {['Active','Used','All'].map(t=>(
-          <div key={t} className={`tab ${tab===t?'active':''}`} onClick={()=>setTab(t)}>{t}</div>
-        ))}
-      </div>
+      {wallet.length === 0 && (
+        <div className="drop-card" style={{textAlign:'center',color:'var(--muted)'}}>
+          No rewards yet. Claim a drop to see it here.
+        </div>
+      )}
 
-      {list.length===0 && <div className="card" style={{color:'#9FB3C8'}}>No rewards yet.</div>}
-
-      {list.map(w=>(
-        <div key={w.code} className="card" style={{display:'grid', gap:'8px'}}>
+      {wallet.map(w=>(
+        <div key={w.code} className="drop-card">
           <div className="row">
-            <div style={{fontWeight:900}}>{w.title}</div>
+            <div style={{fontWeight:900}}>{w.reward} — {w.title}</div>
             <span className="badge ok">CONFIRMED</span>
           </div>
-          <div>Code: <span style={{color:'var(--accent)'}}>{w.code}</span></div>
-          <div style={{justifySelf:'center'}}><QRCode value={w.code} size={140}/></div>
-          <div style={{color:'#9FB3C8', fontSize:12}}>Added: {new Date(w.ts).toLocaleString()}</div>
+          <div style={{marginTop:8, color:'var(--muted)'}}>Code: <b>{w.code}</b></div>
+          <div style={{display:'flex', gap:10, marginTop:10}}>
+            <button className="btn neon" onClick={()=>setOpenId(w.id)}>Show QR code</button>
+          </div>
         </div>
       ))}
+
+      {/* MODAL */}
+      {current && (
+        <div className="modal-backdrop" onClick={()=>setOpenId(null)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="row">
+              <div className="title">Your Reward Code</div>
+              <button className="btn ghost" onClick={()=>setOpenId(null)}>✕</button>
+            </div>
+            <div style={{textAlign:'center',marginTop:6,fontWeight:800}}>{current.title}</div>
+            <div style="height:12px"></div>
+            <div style={{height:180, borderRadius:14, background:'#1b2530', border:'1px solid var(--stroke)', marginTop:10, display:'grid',placeItems:'center', color:'var(--muted)'}}>
+              QR PREVIEW
+            </div>
+            <div className="drop-card" style={{margin:'14px 0 0', textAlign:'center', background:'var(--card2)'}}>
+              <div>Code:</div>
+              <div style={{fontWeight:900,letterSpacing:1}}>{current.code}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{height:84}}/>
     </div>
   )
 }

@@ -31,22 +31,20 @@ export default function DropDetails(){
 
   if (!drop) return <div className="page-wrap">Not found</div>
 
-  const isAlwaysClaimable = drop.type==='AMBIENT' || drop.radius===null || drop.type==='CRYPTO'
-  const claimable = isAlwaysClaimable || (dist!=null && drop.radius!=null && dist<=drop.radius)
+  const always = drop.type==='AMBIENT' || drop.type==='CRYPTO' || drop.radius===null
+  const canClaim = always || (dist!=null && drop.radius!=null && dist<=drop.radius)
 
   function claim(){
-    if (!claimable){
+    if (!canClaim){
       showToast(`Too far – get within ${drop.radius} m to claim`)
       return
     }
     addToWallet(drop)
     showToast('Drop Claimed')
-    setTimeout(()=>navigate('/'), 600) // vrni na Map
+    setTimeout(()=>navigate('/'), 600)
   }
 
-  function showOnMap(){
-    navigate(`/?focus=${drop.id}#map`)
-  }
+  function showOnMap(){ navigate(`/?focus=${drop.id}#map`) }
 
   return (
     <div className="page-wrap" style={{padding:'16px'}}>
@@ -66,19 +64,19 @@ export default function DropDetails(){
         <div style={{marginTop:6, color:'#9FB3C8'}}>Location: {drop.subtitle}</div>
 
         <div style={{display:'grid', gap:8, fontSize:12, marginTop:12}}>
-          <div className="row"><div>Distance:</div><div>{(isAlwaysClaimable ? '—' : (dist!=null? `${dist} m` : 'locating…'))}</div></div>
+          <div className="row"><div>Distance:</div><div>{always ? '—' : (dist!=null? `${dist} m` : 'locating…')}</div></div>
           <div className="row"><div>Radius:</div><div>{drop.radius ?? '∞'} m</div></div>
           <div className="row"><div>Claims:</div><div>{drop.claims}/{drop.cap}</div></div>
         </div>
 
         <div style={{display:'flex', gap:10, marginTop:14}}>
-          <button className="btn neon" onClick={claim} disabled={!claimable} style={{opacity:claimable?1:.6}}>
-            {claimable ? 'Claim' : 'Too far'}
+          <button className="btn neon" onClick={claim} disabled={!canClaim} style={{opacity:canClaim?1:.6}}>
+            {canClaim ? 'Claim' : 'Too far'}
           </button>
           <button className="btn ghost" onClick={showOnMap}>Show on map</button>
         </div>
 
-        {!isAlwaysClaimable && !claimable && dist!=null &&
+        {!always && !canClaim && dist!=null &&
           <div style={{color:'var(--yellow)', fontSize:12, marginTop:10}}>
             Too far – get within {drop.radius} m to claim
           </div>
