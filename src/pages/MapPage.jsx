@@ -27,6 +27,7 @@ export default function MapPage() {
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
+  // live location (watch + fallback)
   useEffect(()=>{
     if (!navigator.geolocation) return
     const id = navigator.geolocation.watchPosition(
@@ -36,12 +37,13 @@ export default function MapPage() {
     return ()=> navigator.geolocation.clearWatch(id)
   },[])
 
+  // Fix sizing after expand/collapse
   useEffect(()=>{
     if (!mapRef.current) return
-    setTimeout(()=> mapRef.current.invalidateSize(), 220)
+    setTimeout(()=> mapRef.current.invalidateSize(), 250)
   }, [expanded])
 
-  // Show on map (?focus=id)
+  // Support for ?focus=<id> (Show on map)
   useEffect(()=>{
     const p = new URLSearchParams(location.search)
     const focus = p.get('focus')
@@ -52,6 +54,8 @@ export default function MapPage() {
       if (ll && ll[0]!=null){
         mapRef.current.flyTo(ll, 16, {animate:true})
         setExpanded(true)
+      } else if (d.type==='AMBIENT' && !myPos){
+        showToast('Location needed for Ambient drop')
       }
     }
   },[location.search, drops, myPos])

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
+import QRCode from 'qrcode'  // statični import (brez eval/dynamic import)
 
 export default function WalletPage(){
   const wallet = useStore(s=>s.wallet)
@@ -7,21 +8,14 @@ export default function WalletPage(){
   const current = wallet.find(w => w.id === openId)
   const qrRef = useRef(null)
 
-  // generate QR when modal opens
   useEffect(()=>{
-    let mounted = true
-    async function gen(){
-      if (!current || !qrRef.current) return
-      const { default: QRCode } = await import('qrcode')
-      try{
-        await QRCode.toCanvas(qrRef.current, current.code, {
-          width: 220, margin: 1,
-          color: { dark:'#E6F1FF', light:'#121A23' }
-        })
-      }catch(e){ console.error(e) }
-    }
-    gen()
-    return ()=>{ mounted=false }
+    if (!current || !qrRef.current) return
+    // očisti in nariši
+    const c = qrRef.current
+    const ctx = c.getContext('2d'); if (ctx) ctx.clearRect(0,0,c.width,c.height)
+    QRCode.toCanvas(c, current.code, {
+      width: 220, margin: 1, color: { dark:'#E6F1FF', light:'#121A23' }
+    }).catch(console.error)
   }, [current])
 
   return (
@@ -47,7 +41,6 @@ export default function WalletPage(){
         </div>
       ))}
 
-      {/* MODAL */}
       {current && (
         <div className="modal-backdrop" onClick={()=>setOpenId(null)}>
           <div className="modal" onClick={e=>e.stopPropagation()}>
