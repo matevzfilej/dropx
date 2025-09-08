@@ -17,6 +17,7 @@ export default function MapPage() {
   const [myPos, setMyPos] = useState(null)
   const mapRef = useRef(null)
 
+  // CSS marker icons
   const neonIcon = useMemo(() => (color='default') => L.divIcon({
     className: 'neon-pin ' + (color==='purple'?'purple': color==='green'?'green': color==='pink'?'pink':''),
     html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
@@ -25,7 +26,7 @@ export default function MapPage() {
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
-  // sprotna lokacija
+  // Live location
   useEffect(()=>{
     if (!navigator.geolocation) return
     const id = navigator.geolocation.watchPosition(
@@ -35,13 +36,13 @@ export default function MapPage() {
     return ()=> navigator.geolocation.clearWatch(id)
   },[])
 
-  // Expand/collapse → invalidiraj velikost (odpravi belino)
+  // Recalculate map size on expand/collapse (odpravi belino)
   useEffect(()=>{
     if (!mapRef.current) return
     setTimeout(()=> mapRef.current.invalidateSize(), 220)
   }, [expanded])
 
-  // Show on map (?focus=id)
+  // Support for ?focus=<id> → “Show on map”
   useEffect(()=>{
     const p = new URLSearchParams(location.search)
     const focus = p.get('focus')
@@ -85,6 +86,7 @@ export default function MapPage() {
                         whenCreated={m=>mapRef.current=m}
                         style={{height:'100%', width:'100%'}}>
             <TileLayer url={TILE_DARK} attribution={ATTR}/>
+
             {drops.map(d=>{
               const ll = latlngFor(d)
               if (!ll) return null
@@ -103,18 +105,16 @@ export default function MapPage() {
             {myPos && <Marker position={myPos} icon={myIcon}><Popup>You are here</Popup></Marker>}
           </MapContainer>
 
-          {/* Top-right: Legend + Center + Expand/Collapse (vedno dosegljivo) */}
+          {/* ALWAYS-VISIBLE TOP-RIGHT CONTROLS */}
           <div className="map-top-right">
             <button className="fab-round" title="Legend" onClick={()=>setShowLegend(v=>!v)}>ℹ</button>
             <button className="fab-round" title="Center me" onClick={centerMe}>◎</button>
-            <button className="pill" style={{height:38}} onClick={()=>setExpanded(v=>!v)}>
-              {expanded?'Collapse':'Expand'}
-            </button>
+            <button className="pill-top" onClick={()=>setExpanded(v=>!v)}>{expanded?'Collapse':'Expand'}</button>
           </div>
 
           {showLegend && (
             <div style={{position:'absolute',right:8,top:56,background:'rgba(16,24,33,.92)',
-                         border:'1px solid #1b2b3a',borderRadius:12,padding:'8px 10px',color:'#9FB3C8',zIndex:1000}}>
+                         border:'1px solid #1b2b3a',borderRadius:12,padding:'8px 10px',color:'#9FB3C8',zIndex:5000}}>
               Legend:&nbsp;
               <span className="badge partner">Partner</span>&nbsp;
               <span className="badge ambient">Ambient</span>&nbsp;
