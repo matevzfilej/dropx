@@ -1,0 +1,43 @@
+:root {
+  --bg:#0A0F14; --card:#121A23; --card2:#101821;
+  --accent:#3AF2E2; --accent2:#8F6AFF;
+  --text:#E6F1FF; --muted:#9FB3C8; --ok:#2DEE6F;
+  --warn:#FFD166; --chip:#1b2530; --stroke:#0F2131;
+  --pink:#FF4DC9;
+}
+
+body,html,#root{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Inter,Orbitron,sans-serif}
+
+/* nav always visible */
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:2000;
+  display:flex;justify-content:space-around;background:var(--card2);
+  padding:12px 0;border-top:1px solid var(--stroke)}
+.nav a{color:var(--muted);text-decoration:none;font-weight:600}
+.nav a.active{color:var(--accent)}
+
+/* neon button */
+.btn.neon{
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  color:#0A0F14;border:none;border-radius:12px;
+  padding:10px 14px;font-weight:900;cursor:pointer;
+  box-shadow:0 0 8px var(--accent),0 0 18px rgba(58,242,226,.6);
+}
+.btn.neon:hover{opacity:.9}
+
+/* badges by type */
+.badge.partner{background:#163D23;color:#2DEE6F}
+.badge.ambient{background:#3a1030;color:var(--pink)}
+.badge.sponsored{background:#1e143d;color:#8F6AFF}
+.badge.crypto{background:#10303a;color:var(--accent)}
+
+/* leaflet attribution hidden */
+.leaflet-control-attribution{font-size:8px;opacity:0!important}
+
+/* fix expand map blank space */
+.map-expanded .map-wrap{height:calc(100vh - 120px)!important}
+
+/* toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:var(--card2);border:1px solid var(--accent);
+  padding:10px 16px;border-radius:12px;z-index:3000;
+  color:var(--accent);font-weight:800}

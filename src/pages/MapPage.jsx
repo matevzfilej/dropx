@@ -25,7 +25,6 @@ export default function MapPage() {
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
-  // Lokacija + prvi auto center
   useEffect(()=>{
     if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition(
@@ -38,7 +37,6 @@ export default function MapPage() {
     )
   },[])
 
-  // Podpora za ?focus=<id>
   useEffect(()=>{
     const p = new URLSearchParams(location.search)
     const focus = p.get('focus')
@@ -57,12 +55,11 @@ export default function MapPage() {
 
   const centerMe = () => {
     if (myPos && mapRef.current) mapRef.current.flyTo(myPos, 15, {animate:true})
-    else alert('Location unavailable yet')
+    else alert('Location not available')
   }
 
   const openDetails = (d)=> navigate(`/drop/${d.id}`)
 
-  // AMBIENT marker = moja lokacija
   const getMarkerLatLng = (d) => (d.type==='AMBIENT' ? (myPos||null) : [d.lat, d.lng])
 
   return (
@@ -98,27 +95,24 @@ export default function MapPage() {
             {myPos && <Marker position={myPos} icon={myIcon}><Popup>You are here</Popup></Marker>}
           </MapContainer>
 
-          {/* TOP-RIGHT FABs (nad mapo) */}
           <div className="map-top-right">
             <button className="fab-round" title="Legend" onClick={()=>setShowLegend(v=>!v)}>ℹ</button>
             <button className="fab-round" title="Center me" onClick={centerMe}>◎</button>
           </div>
 
-          {/* Bottom-right pill */}
           <div className="map-controls" style={{position:'absolute',right:8,bottom:8,display:'flex',gap:8,zIndex:1000}}>
             <button className="pill" onClick={()=>setExpanded(v=>!v)}>
               {expanded?'Collapse Map':'Expand Map'}
             </button>
           </div>
 
-          {/* Legend */}
           {showLegend && (
             <div style={{position:'absolute',right:8,top:56,background:'rgba(16,24,33,.92)',
                          border:'1px solid #1b2b3a',borderRadius:12,padding:'8px 10px',color:'#9FB3C8',zIndex:1000}}>
               Legend:&nbsp;
               <span style={{color:'#2DEE6F'}}>●</span> Partner&nbsp;•&nbsp;
+              <span style={{color:'#FF4DC9'}}>●</span> Ambient&nbsp;•&nbsp;
               <span style={{color:'#8F6AFF'}}>●</span> Sponsored&nbsp;•&nbsp;
-              <span style={{color:'#3AF2E2'}}>●</span> Ambient&nbsp;•&nbsp;
               <span style={{color:'#3AF2E2'}}>◎</span> You
             </div>
           )}
@@ -135,18 +129,18 @@ export default function MapPage() {
                 <span className="badge ok">ACTIVE</span>
               </div>
               <div style={{display:'flex',gap:8,marginTop:6}}>
-                <span className="badge">{d.type}</span>
+                <span className={`badge ${d.type.toLowerCase()}`}>{d.type}</span>
                 <span className="badge">{d.subtitle}</span>
               </div>
               <div style={{color:'#9FB3C8',fontSize:12,marginTop:8}}>
                 📍 radius {d.radius ?? '∞'} m • {d.reward || ''}
               </div>
             </div>
-            <button className="btn ghost" onClick={()=>openDetails(d)}>View</button>
+            <button className="btn neon" onClick={()=>openDetails(d)}>View</button>
           </div>
         </div>
       ))}
-      <div style={{height:8}}/>
+      <div style={{height:80}}/>
     </div>
   )
 }
