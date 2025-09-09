@@ -1,45 +1,48 @@
 import { create } from 'zustand'
 
+// helper: izračun distance (m) – če ga že imaš v utils, lahko pustiš svojega
+export function haversine(lat1, lon1, lat2, lon2) {
+  const toRad = d => d * Math.PI / 180
+  const R = 6371000
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)))
+}
+
+const initialDrops = [
+  // Partner
+  { id:'mercator',  title:'Mercator Center Ruše -10%', type:'PARTNER', color:'green',
+    lat:46.53909994987996, lng:15.511317510902673, radius:120, cap:1000, claims:7,
+    subtitle:'Falska cesta 18', reward:'10% popusta na celotni nakup' },
+  // Partner
+  { id:'peckah', title:'Free Isotonic', type:'PARTNER', color:'green',
+    lat:46.52294326740665, lng:15.540875155081894, radius:120, cap:1000, claims:7,
+    subtitle:'Dom na Pečkah', reward:'1 brezplačni Isotonic' },
+  // Ambient – “anywhere” (prikažemo malo vstran od userja)
+  { id:'mystery', title:'Mystery Orb', type:'AMBIENT', color:'pink',
+    lat:null, lng:null, radius:null, cap:1000, claims:7,
+    subtitle:'Ambient reward appears…', reward:'3 RION' },
+  // Crypto global
+  { id:'starter', title:'3 RION — Starter Pack', type:'CRYPTO', color:'yellow',
+    lat:null, lng:null, radius:null, cap:1000, claims:7,
+    subtitle:'Crypto', reward:'3 RION' },
+]
+
 export const useStore = create((set, get) => ({
-  drops: [
-    { id:'mc-ruse', title:'Mercator Center Ruše -10%', subtitle:'Falska cesta 18',
-      lat:46.53909994987996, lng:15.511317510902673, status:'ACTIVE',
-      type:'PARTNER', reward:'10% popusta na celotni nakup', radius:120, color:'green',
-      claims:5, cap:1000 },
+  drops: initialDrops,
 
-    { id:'pecke-iso', title:'Free Isotonic', subtitle:'Dom na Pečkah',
-      lat:46.52294326740665, lng:15.540875155081894, status:'ACTIVE',
-      type:'PARTNER', reward:'1 brezplačni Isotonic', radius:120, color:'purple',
-      claims:7, cap:1000 },
-
-    { id:'ambient-anywhere', title:'Mystery Orb', subtitle:'Ambient reward appears…',
-      lat:null, lng:null, status:'ACTIVE', type:'AMBIENT', reward:'3 RION', radius:null, color:'pink',
-      claims:3, cap:1000 },
-
-    { id:'rion-starter', title:'3 RION — Starter Pack', subtitle:'Crypto',
-      lat:46.0569, lng:14.5058, status:'ACTIVE', type:'CRYPTO', reward:'3 RION', radius:null, color:'yellow',
-      claims:12, cap:1000 },
-
-    { id:'mb-center', title:'Maribor Special', subtitle:'Glavni trg',
-      lat:46.5547, lng:15.6459, status:'ACTIVE', type:'PARTNER', reward:'Kava -50%', radius:150, color:'green',
-      claims:21, cap:1000 },
-
-    { id:'lj-btc', title:'BTC City Bonus', subtitle:'Ljubljana',
-      lat:46.0718, lng:14.5410, status:'ACTIVE', type:'PARTNER', reward:'Popust 5€', radius:200, color:'green',
-      claims:9, cap:1000 },
-  ],
-
+  // Wallet (preprost mock)
   wallet: [],
   addToWallet: (drop) => set(s => ({
-    wallet: [...s.wallet, {
-      ...drop,
-      code: 'DX-' + Math.random().toString(36).substring(2,8).toUpperCase(),
-      ts: Date.now()
-    }]
+    wallet: [
+      ...s.wallet,
+      { id: `${drop.id}-${Date.now()}`, title: drop.title, reward: drop.reward || '', code: `DX-${Math.random().toString(36).slice(2,7).toUpperCase()}` }
+    ]
   })),
 
-  stats: () => {
-    const w = get().wallet
-    return { claimed: w.length, rion: 5, used: 0 }
-  }
+  // 🔥 Fokus cilj na mapi (namesto URL parametrov)
+  focusTargetId: null,
+  setFocus: (id) => set({ focusTargetId: id }),
+  clearFocus: () => set({ focusTargetId: null }),
 }))

@@ -1,29 +1,28 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import { useStore } from '../store'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import L from 'leaflet'
 
 const TILE_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
 const ATTR = '&copy; OpenStreetMap contributors &copy; CARTO'
 
-// Ambient marker damo malo vstran od “You” točke, da ni čez njo
+// Ambient marker damo malo vstran od “You” točke
 const ambientOffset = (pos) => pos ? [pos[0] + 0.0006, pos[1] + 0.0006] : null
 
 export default function MapPage() {
   const drops = useStore(s => s.drops)
+  const focusTargetId = useStore(s => s.focusTargetId)
+  const clearFocus = useStore(s => s.clearFocus)
   const navigate = useNavigate()
-  const location = useLocation()
 
   const [expanded, setExpanded] = useState(false)
   const [showLegend, setShowLegend] = useState(false)
   const [myPos, setMyPos] = useState(null)
 
   const mapRef = useRef(null)
-  const focusingRef = useRef(false)        // varovalo pred “resetom”
-  const pendingFocusId = useRef(null)      // čakamo na myPos za AMBIENT
+  const focusingRef = useRef(false)
 
-  // Markerji (barve = legenda)
   const neonIcon = useMemo(() => (color='default') => L.divIcon({
     className: 'neon-pin ' + (
       color==='purple' ? 'purple'
@@ -38,77 +37,52 @@ export default function MapPage() {
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
-  /* ===== GEOLOKACIJA (watch + hiter fallback) ===== */
+  /* GEOLOKACIJA: watch + fallback */
   useEffect(()=>{
     if (!navigator.geolocation) return
     const id = navigator.geolocation.watchPosition(
       pos => setMyPos([pos.coords.latitude, pos.coords.longitude]),
       ()=>{}, { enableHighAccuracy:true, maximumAge:5000 }
     )
-    // enkratni fallback, če watch zamuja
     const t = setTimeout(()=>{
       if (!myPos) {
         navigator.geolocation.getCurrentPosition(
-          pos => setMyPos([pos.coords.latitude, pos.coords.longitude]),
+          pos => setMyPos([pos.coords.latitude,pos.coords.longitude]),
           ()=>{}, { enableHighAccuracy:true, timeout:8000 }
         )
       }
     }, 1500)
-    return ()=>{
-      navigator.geolocation.clearWatch(id)
-      clearTimeout(t)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return ()=>{ navigator.geolocation.clearWatch(id); clearTimeout(t) }
+    // eslint-disable-next-line
   },[])
 
-  /* ===== popravi velikost po expand/collapse (odpravi belino) ===== */
+  /* Expand size fix */
   useEffect(()=>{
     if (!mapRef.current) return
     setTimeout(()=> mapRef.current.invalidateSize(), 250)
   }, [expanded])
 
-  /* ===== SHOW ON MAP prek ?focus=<id> ===== */
+  /* SHOW ON MAP preko store.focusTargetId (BREZ URL) */
   useEffect(()=>{
-    const params = new URLSearchParams(location.search)
-    const focusId = params.get('focus')
-    if (!focusId) return
+    if (!focusTargetId || !mapRef.current) return
+    const d = drops.find(x=>x.id===focusTargetId)
+    if (!d) { clearFocus(); return }
 
-    const d = drops.find(x=>x.id===focusId)
-    if (!d) return
-
-    // če je AMBIENT, potrebujemo myPos
-    if (d.type === 'AMBIENT' && !myPos) {
-      pendingFocusId.current = focusId
-      return
-    }
+    // Za AMBIENT potrebujemo myPos
+    if (d.type==='AMBIENT' && !myPos) return  // počakamo na myPos; effect se bo spet sprožil
 
     const ll = d.type==='AMBIENT' ? ambientOffset(myPos) : [d.lat, d.lng]
-    if (!ll || ll[0]==null || !mapRef.current) return
+    if (!ll || ll[0]==null) return
 
     focusingRef.current = true
     setExpanded(true)
     setTimeout(()=>{
       mapRef.current.flyTo(ll, 16, { animate:true })
-      setTimeout(()=>{ focusingRef.current = false }, 1000)
+      setTimeout(()=>{ focusingRef.current = false; clearFocus() }, 1000)
     }, 120)
-  }, [location.search, drops, myPos])
+  }, [focusTargetId, drops, myPos, clearFocus])
 
-  // če smo čakali na myPos za AMBIENT, izvedi fokus, ko prispe
-  useEffect(()=>{
-    if (!pendingFocusId.current || !myPos) return
-    const d = drops.find(x=>x.id===pendingFocusId.current)
-    if (!d) return
-    const ll = ambientOffset(myPos)
-    if (!ll || !mapRef.current) return
-    focusingRef.current = true
-    setExpanded(true)
-    setTimeout(()=>{
-      mapRef.current.flyTo(ll, 16, { animate:true })
-      setTimeout(()=>{ focusingRef.current = false; pendingFocusId.current = null }, 1000)
-    }, 120)
-  }, [myPos, drops])
-
-  /* ===== CENTER ME ===== */
+  /* CENTER ME */
   function centerMe(){
     if (myPos && mapRef.current) {
       focusingRef.current = true
@@ -142,7 +116,7 @@ export default function MapPage() {
       <div className="header">
         <div className="title">DropX Map</div>
         <div className="subtitle">Find rewards near you</div>
-        <input className="search" placeholder="Search places, rewards, categories"/>
+        <input className="search" placeholder="Search places, rewards, categories" id="search" name="search"/>
       </div>
 
       <div className="map-card">

@@ -4,8 +4,13 @@ import { useNavigate } from 'react-router-dom'
 
 export default function DropsPage(){
   const drops = useStore(s=>s.drops)
+  const setFocus = useStore(s=>s.setFocus)
   const navigate = useNavigate()
-  const showOnMap = (id)=> navigate(`/?focus=${id}#map`)
+
+  const showOnMap = (id)=>{
+    setFocus(id)   // povej mapi, kaj naj fokusira
+    navigate('/')  // samo pojdi na map
+  }
 
   return (
     <div className="page-wrap">

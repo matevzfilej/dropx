@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useStore } from '../store'
-import { distanceMeters } from '../utils/geo'
+import { useStore, haversine } from '../store'
 
 export default function DropDetails(){
   const { id } = useParams()
   const navigate = useNavigate()
   const drop = useStore(s=>s.drops.find(d=>d.id===id))
   const addToWallet = useStore(s=>s.addToWallet)
+  const setFocus = useStore(s=>s.setFocus)
 
   const [myPos, setMyPos] = useState(null)
   const [dist, setDist] = useState(null)
@@ -25,7 +25,7 @@ export default function DropDetails(){
     if (drop && myPos){
       const lat = drop.lat ?? myPos[0]
       const lng = drop.lng ?? myPos[1]
-      setDist(Math.round(distanceMeters(myPos[0], myPos[1], lat, lng)))
+      setDist(haversine(myPos[0], myPos[1], lat, lng))
     }
   }, [drop, myPos])
 
@@ -44,7 +44,10 @@ export default function DropDetails(){
     setTimeout(()=>navigate('/'), 600)
   }
 
-  function showOnMap(){ navigate(`/?focus=${drop.id}#map`) }
+  function showOnMap(){
+    setFocus(drop.id) // sporoči mapi
+    navigate('/')     // odpri mapo
+  }
 
   return (
     <div className="page-wrap" style={{padding:'16px'}}>
