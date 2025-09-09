@@ -10,6 +10,10 @@ const ATTR = '&copy; OpenStreetMap contributors &copy; CARTO'
 // Ambient marker damo malo vstran od “You” točke
 const ambientOffset = (pos) => pos ? [pos[0] + 0.0006, pos[1] + 0.0006] : null
 
+// helper: validacija koordinat
+const isValidLL = (ll) => Array.isArray(ll) && Number.isFinite(ll[0]) && Number.isFinite(ll[1])
+const fmtLL = (ll) => isValidLL(ll) ? `${ll[0].toFixed(4)}, ${ll[1].toFixed(4)}` : '—'
+
 export default function MapPage() {
   const drops = useStore(s => s.drops)
   const focusTargetId = useStore(s => s.focusTargetId)
@@ -69,10 +73,13 @@ export default function MapPage() {
     if (!d) { clearFocus(); return }
 
     // Za AMBIENT potrebujemo myPos
-    if (d.type==='AMBIENT' && !myPos) return  // počakamo na myPos; effect se bo spet sprožil
+    if (d.type==='AMBIENT' && !myPos) return  // počakamo na myPos; effect se sproži znova
 
-    const ll = d.type==='AMBIENT' ? ambientOffset(myPos) : [d.lat, d.lng]
-    if (!ll || ll[0]==null) return
+    const ll = d.type==='AMBIENT'
+      ? ambientOffset(myPos)
+      : (Number.isFinite(d.lat) && Number.isFinite(d.lng) ? [d.lat, d.lng] : null)
+
+    if (!isValidLL(ll)) return
 
     focusingRef.current = true
     setExpanded(true)
@@ -109,7 +116,13 @@ export default function MapPage() {
   }
 
   const openDetails = (d)=> navigate(`/drop/${d.id}`)
-  const latlngFor = (d) => d.type==='AMBIENT' ? ambientOffset(myPos) : [d.lat, d.lng]
+
+  // Samo za PARTNER (in AMBIENT, ko imamo myPos) vračaj veljavne koordinate
+  const latlngFor = (d) => {
+    if (d.type==='AMBIENT') return ambientOffset(myPos)
+    if (Number.isFinite(d.lat) && Number.isFinite(d.lng)) return [d.lat, d.lng]
+    return null // CRYPTO ali karkoli brez lokacije -> brez markerja
+  }
 
   return (
     <div className={`page-wrap ${expanded ? 'map-expanded' : ''}`}>
@@ -128,20 +141,24 @@ export default function MapPage() {
 
             {drops.map(d=>{
               const ll = latlngFor(d)
-              if (!ll) return null
+              if (!isValidLL(ll)) return null
               return (
                 <Marker key={d.id} position={ll} icon={neonIcon(d.color)}>
                   <Popup>
                     <b>{d.title}</b><br/>
                     {d.subtitle}<br/>
-                    {ll[0].toFixed(4)}, {ll[1].toFixed(4)}<br/>
+                    {fmtLL(ll)}<br/>
                     <span style={{textDecoration:'underline',cursor:'pointer'}}
                           onClick={()=>openDetails(d)}>View</span>
                   </Popup>
                 </Marker>
               )
             })}
-            {myPos && <Marker position={myPos} icon={myIcon}><Popup>You are here</Popup></Marker>}
+            {isValidLL(myPos) && (
+              <Marker position={myPos} icon={myIcon}>
+                <Popup>You are here</Popup>
+              </Marker>
+            )}
           </MapContainer>
 
           {/* Top-right controls */}
