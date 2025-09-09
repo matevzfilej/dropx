@@ -12,6 +12,7 @@ export default function DropDetails(){
   const [myPos, setMyPos] = useState(null)
   const [dist, setDist] = useState(null)
 
+  // enkratno branje lokacije
   useEffect(()=>{
     if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition(
@@ -21,18 +22,20 @@ export default function DropDetails(){
     )
   }, [])
 
+  // izračun razdalje (če ima drop veljavne koordinate)
   useEffect(()=>{
-    if (drop && myPos){
-      const lat = Number.isFinite(drop.lat) ? drop.lat : myPos[0]
-      const lng = Number.isFinite(drop.lng) ? drop.lng : myPos[1]
-      setDist(haversine(myPos[0], myPos[1], lat, lng))
-    }
+    if (!drop || !myPos) return
+    const hasLL = Number.isFinite(drop.lat) && Number.isFinite(drop.lng)
+    if (!hasLL) { setDist(null); return }
+    setDist(haversine(myPos[0], myPos[1], drop.lat, drop.lng))
   }, [drop, myPos])
 
   if (!drop) return <div className="page-wrap">Not found</div>
 
-  const always = drop.type==='AMBIENT' || drop.type==='CRYPTO' || drop.radius===null
-  const canClaim = always || (dist!=null && drop.radius!=null && dist<=drop.radius)
+  // 🔧 NOVA LOGIKA:
+  // "Anywhere" samo, če radius NI določen (== null). Ne glede na tip (CRYPTO/AMBIENT/…)
+  const isAnywhere = drop.radius == null
+  const canClaim = isAnywhere || (dist != null && drop.radius != null && dist <= drop.radius)
 
   function claim(){
     if (!canClaim){
@@ -43,7 +46,11 @@ export default function DropDetails(){
     toast('Drop Claimed')
     setTimeout(()=>navigate('/'), 600)
   }
-  function showOnMap(){ setFocus(drop.id); navigate('/') }
+
+  function showOnMap(){
+    setFocus(drop.id)
+    navigate('/')
+  }
 
   return (
     <div className="page-wrap" style={{padding:'16px'}}>
@@ -63,7 +70,10 @@ export default function DropDetails(){
         <div style={{marginTop:6, color:'#9FB3C8'}}>Location: {drop.subtitle}</div>
 
         <div style={{display:'grid', gap:8, fontSize:12, marginTop:12}}>
-          <div className="row"><div>Distance:</div><div>{always ? '—' : (dist!=null? `${dist} m` : 'locating…')}</div></div>
+          <div className="row">
+            <div>Distance:</div>
+            <div>{isAnywhere ? '—' : (dist!=null ? `${dist} m` : 'locating…')}</div>
+          </div>
           <div className="row"><div>Radius:</div><div>{drop.radius ?? '∞'} m</div></div>
           <div className="row"><div>Claims:</div><div>{drop.claims}/{drop.cap}</div></div>
         </div>
@@ -74,6 +84,12 @@ export default function DropDetails(){
           </button>
           <button className="btn ghost" onClick={showOnMap}>Show on map</button>
         </div>
+
+        {!isAnywhere && !canClaim && dist!=null &&
+          <div style={{color:'var(--yellow)', fontSize:12, marginTop:10}}>
+            Too far – get within {drop.radius} m to claim
+          </div>
+        }
       </div>
     </div>
   )
