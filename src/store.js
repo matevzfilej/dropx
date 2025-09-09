@@ -39,6 +39,22 @@ const initialDrops = [
   { id:'btc-bonus', title:'BTC City Bonus', type:'PARTNER', color:'green',
     lat:46.065, lng:14.542, radius:200, cap:1000, claims:7,
     subtitle:'Ljubljana', reward:'Popust 5€' },
+
+{
+  id: 'gf-premium',
+  title: 'G.F. premium RION drop',
+  type: 'CRYPTO',           // barva: rumena (v UI je mapirano na 'crypto')
+  color: 'yellow',
+  lat: 46.07109308048376,
+  lng: 14.480521283899263,
+  radius: 120,              // zahtevaj približanje (po potrebi spremeni na null za “anywhere”)
+  cap: 1000,
+  claims: 0,
+  subtitle: 'Ljubljana',
+  reward: '10 $RION'
+},
+
+
 ]
 
 export const useStore = create((set, get) => ({
