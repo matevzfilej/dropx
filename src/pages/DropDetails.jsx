@@ -69,7 +69,7 @@ export default function DropDetails(){
           <div className="row"><div>Claims:</div><div>{drop.claims}/{drop.cap}</div></div>
         </div>
 
-        <div style={{display:'flex', gap:10, marginTop:14}}>
+        <div style={{display:'flex', gap:10, marginTop:14, flexWrap:'wrap'}}>
           <button className="btn neon" onClick={claim} disabled={!canClaim} style={{opacity:canClaim?1:.6}}>
             {canClaim ? 'Claim' : 'Too far'}
           </button>

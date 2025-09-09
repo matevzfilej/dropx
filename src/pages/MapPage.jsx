@@ -7,6 +7,7 @@ import L from 'leaflet'
 const TILE_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
 const ATTR = '&copy; OpenStreetMap contributors &copy; CARTO'
 
+// Ambient marker damo malo vstran od “You” točke, da ni čez njo
 const ambientOffset = (pos) => pos ? [pos[0] + 0.0006, pos[1] + 0.0006] : null
 
 export default function MapPage() {
@@ -17,25 +18,35 @@ export default function MapPage() {
   const [expanded, setExpanded] = useState(false)
   const [showLegend, setShowLegend] = useState(false)
   const [myPos, setMyPos] = useState(null)
-  const mapRef = useRef(null)
 
+  const mapRef = useRef(null)
+  const focusingRef = useRef(false)        // varovalo pred “resetom”
+  const pendingFocusId = useRef(null)      // čakamo na myPos za AMBIENT
+
+  // Markerji (barve = legenda)
   const neonIcon = useMemo(() => (color='default') => L.divIcon({
-    className: 'neon-pin ' + (color==='purple'?'purple': color==='green'?'green': color==='pink'?'pink': color==='yellow'?'yellow':''),
+    className: 'neon-pin ' + (
+      color==='purple' ? 'purple'
+      : color==='green' ? 'green'
+      : color==='pink' ? 'pink'
+      : color==='yellow' ? 'yellow'
+      : ''
+    ),
     html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
   const myIcon = useMemo(() => L.divIcon({
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
-  // Geolokacija: watch + fallback (da vedno nekaj dobimo)
+  /* ===== GEOLOKACIJA (watch + hiter fallback) ===== */
   useEffect(()=>{
     if (!navigator.geolocation) return
     const id = navigator.geolocation.watchPosition(
       pos => setMyPos([pos.coords.latitude, pos.coords.longitude]),
       ()=>{}, { enableHighAccuracy:true, maximumAge:5000 }
     )
-    // 1x fallback - če watch še ni dal koordinate
-    setTimeout(()=>{
+    // enkratni fallback, če watch zamuja
+    const t = setTimeout(()=>{
       if (!myPos) {
         navigator.geolocation.getCurrentPosition(
           pos => setMyPos([pos.coords.latitude, pos.coords.longitude]),
@@ -43,43 +54,79 @@ export default function MapPage() {
         )
       }
     }, 1500)
-    return ()=> navigator.geolocation.clearWatch(id)
-  },[]) // eslint-disable-line
+    return ()=>{
+      navigator.geolocation.clearWatch(id)
+      clearTimeout(t)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[])
 
-  // popravi velikost po expand/collapse (odpravi belino)
+  /* ===== popravi velikost po expand/collapse (odpravi belino) ===== */
   useEffect(()=>{
     if (!mapRef.current) return
     setTimeout(()=> mapRef.current.invalidateSize(), 250)
   }, [expanded])
 
-  // Show on map (?focus=id) – fokusiramo pravi pin
+  /* ===== SHOW ON MAP prek ?focus=<id> ===== */
   useEffect(()=>{
-    const p = new URLSearchParams(location.search)
-    const focus = p.get('focus')
-    if (!focus || !mapRef.current) return
-    const d = drops.find(x=>x.id===focus)
+    const params = new URLSearchParams(location.search)
+    const focusId = params.get('focus')
+    if (!focusId) return
+
+    const d = drops.find(x=>x.id===focusId)
     if (!d) return
 
-    const ll = d.type==='AMBIENT' ? ambientOffset(myPos) : [d.lat, d.lng]
-    if (ll && ll[0]!=null){
-      setExpanded(true)
-      setTimeout(()=> mapRef.current.flyTo(ll, 16, {animate:true}), 50)
-    } else if (d.type==='AMBIENT' && !myPos){
-      showToast('Turn on location to show Ambient drop on map')
+    // če je AMBIENT, potrebujemo myPos
+    if (d.type === 'AMBIENT' && !myPos) {
+      pendingFocusId.current = focusId
+      return
     }
-  },[location.search, drops, myPos])
 
+    const ll = d.type==='AMBIENT' ? ambientOffset(myPos) : [d.lat, d.lng]
+    if (!ll || ll[0]==null || !mapRef.current) return
+
+    focusingRef.current = true
+    setExpanded(true)
+    setTimeout(()=>{
+      mapRef.current.flyTo(ll, 16, { animate:true })
+      setTimeout(()=>{ focusingRef.current = false }, 1000)
+    }, 120)
+  }, [location.search, drops, myPos])
+
+  // če smo čakali na myPos za AMBIENT, izvedi fokus, ko prispe
+  useEffect(()=>{
+    if (!pendingFocusId.current || !myPos) return
+    const d = drops.find(x=>x.id===pendingFocusId.current)
+    if (!d) return
+    const ll = ambientOffset(myPos)
+    if (!ll || !mapRef.current) return
+    focusingRef.current = true
+    setExpanded(true)
+    setTimeout(()=>{
+      mapRef.current.flyTo(ll, 16, { animate:true })
+      setTimeout(()=>{ focusingRef.current = false; pendingFocusId.current = null }, 1000)
+    }, 120)
+  }, [myPos, drops])
+
+  /* ===== CENTER ME ===== */
   function centerMe(){
     if (myPos && mapRef.current) {
-      mapRef.current.panTo(myPos, {animate:true})
-      setTimeout(()=> mapRef.current.flyTo(myPos, 15, {animate:true}), 100)
+      focusingRef.current = true
+      mapRef.current.panTo(myPos, { animate:true })
+      setTimeout(()=>{
+        mapRef.current.flyTo(myPos, 15, { animate:true })
+        setTimeout(()=>{ focusingRef.current = false }, 800)
+      }, 120)
       return
     }
     if (navigator.geolocation){
       navigator.geolocation.getCurrentPosition(
         pos => {
           const p=[pos.coords.latitude,pos.coords.longitude]
-          setMyPos(p); mapRef.current?.flyTo(p, 15, {animate:true})
+          setMyPos(p)
+          focusingRef.current = true
+          mapRef.current?.flyTo(p, 15, { animate:true })
+          setTimeout(()=>{ focusingRef.current = false }, 800)
         },
         ()=> showToast('Enable location to use Center me'),
         { enableHighAccuracy:true, timeout:10000 }
