@@ -7,10 +7,7 @@ import L from 'leaflet'
 const TILE_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
 const ATTR = '&copy; OpenStreetMap contributors &copy; CARTO'
 
-// Ambient marker damo malo vstran od “You” točke
 const ambientOffset = (pos) => pos ? [pos[0] + 0.0006, pos[1] + 0.0006] : null
-
-// helper: validacija koordinat
 const isValidLL = (ll) => Array.isArray(ll) && Number.isFinite(ll[0]) && Number.isFinite(ll[1])
 const fmtLL = (ll) => isValidLL(ll) ? `${ll[0].toFixed(4)}, ${ll[1].toFixed(4)}` : '—'
 
@@ -25,7 +22,6 @@ export default function MapPage() {
   const [myPos, setMyPos] = useState(null)
 
   const mapRef = useRef(null)
-  const focusingRef = useRef(false)
 
   const neonIcon = useMemo(() => (color='default') => L.divIcon({
     className: 'neon-pin ' + (
@@ -41,7 +37,7 @@ export default function MapPage() {
     className:'my-pos', html:'<div></div>', iconSize:[14,14], iconAnchor:[7,7]
   }),[])
 
-  /* GEOLOKACIJA: watch + fallback */
+  // GEOLOC: watch + fallback
   useEffect(()=>{
     if (!navigator.geolocation) return
     const id = navigator.geolocation.watchPosition(
@@ -60,20 +56,19 @@ export default function MapPage() {
     // eslint-disable-next-line
   },[])
 
-  /* Expand size fix */
+  // popravi velikost po expand/collapse
   useEffect(()=>{
-    if (!mapRef.current) return
-    setTimeout(()=> mapRef.current.invalidateSize(), 250)
+    if (mapRef.current) setTimeout(()=> mapRef.current.invalidateSize(), 250)
   }, [expanded])
 
-  /* SHOW ON MAP preko store.focusTargetId (BREZ URL) */
+  // SHOW ON MAP – store-driven
   useEffect(()=>{
     if (!focusTargetId || !mapRef.current) return
     const d = drops.find(x=>x.id===focusTargetId)
     if (!d) { clearFocus(); return }
 
-    // Za AMBIENT potrebujemo myPos
-    if (d.type==='AMBIENT' && !myPos) return  // počakamo na myPos; effect se sproži znova
+    // za AMBIENT potrebujemo myPos
+    if (d.type==='AMBIENT' && !myPos) return
 
     const ll = d.type==='AMBIENT'
       ? ambientOffset(myPos)
@@ -81,47 +76,37 @@ export default function MapPage() {
 
     if (!isValidLL(ll)) return
 
-    focusingRef.current = true
     setExpanded(true)
     setTimeout(()=>{
       mapRef.current.flyTo(ll, 16, { animate:true })
-      setTimeout(()=>{ focusingRef.current = false; clearFocus() }, 1000)
+      setTimeout(()=> clearFocus(), 900)
     }, 120)
   }, [focusTargetId, drops, myPos, clearFocus])
 
-  /* CENTER ME */
+  // CENTER ME
   function centerMe(){
-    if (myPos && mapRef.current) {
-      focusingRef.current = true
-      mapRef.current.panTo(myPos, { animate:true })
-      setTimeout(()=>{
-        mapRef.current.flyTo(myPos, 15, { animate:true })
-        setTimeout(()=>{ focusingRef.current = false }, 800)
-      }, 120)
+    if (isValidLL(myPos) && mapRef.current){
+      mapRef.current.flyTo(myPos, 15, { animate:true })
       return
     }
     if (navigator.geolocation){
       navigator.geolocation.getCurrentPosition(
         pos => {
-          const p=[pos.coords.latitude,pos.coords.longitude]
+          const p = [pos.coords.latitude, pos.coords.longitude]
           setMyPos(p)
-          focusingRef.current = true
           mapRef.current?.flyTo(p, 15, { animate:true })
-          setTimeout(()=>{ focusingRef.current = false }, 800)
         },
-        ()=> showToast('Enable location to use Center me'),
+        ()=> alert('Enable location to use Center me'),
         { enableHighAccuracy:true, timeout:10000 }
       )
     }
   }
 
   const openDetails = (d)=> navigate(`/drop/${d.id}`)
-
-  // Samo za PARTNER (in AMBIENT, ko imamo myPos) vračaj veljavne koordinate
   const latlngFor = (d) => {
     if (d.type==='AMBIENT') return ambientOffset(myPos)
     if (Number.isFinite(d.lat) && Number.isFinite(d.lng)) return [d.lat, d.lng]
-    return null // CRYPTO ali karkoli brez lokacije -> brez markerja
+    return null // no marker for global/invalid
   }
 
   return (
@@ -129,16 +114,15 @@ export default function MapPage() {
       <div className="header">
         <div className="title">DropX Map</div>
         <div className="subtitle">Find rewards near you</div>
-        <input className="search" placeholder="Search places, rewards, categories" id="search" name="search"/>
+        <input className="search" id="search" name="search" placeholder="Search places, rewards, categories"/>
       </div>
 
       <div className="map-card">
         <div className="map-wrap" id="map">
-          <MapContainer center={[46.54,15.51]} zoom={13}
+          <MapContainer center={[46.54,15.51]} zoom={12}
                         whenCreated={m=>mapRef.current=m}
                         style={{height:'100%', width:'100%'}}>
             <TileLayer url={TILE_DARK} attribution={ATTR}/>
-
             {drops.map(d=>{
               const ll = latlngFor(d)
               if (!isValidLL(ll)) return null
@@ -155,16 +139,13 @@ export default function MapPage() {
               )
             })}
             {isValidLL(myPos) && (
-              <Marker position={myPos} icon={myIcon}>
-                <Popup>You are here</Popup>
-              </Marker>
+              <Marker position={myPos} icon={myIcon}><Popup>You are here</Popup></Marker>
             )}
           </MapContainer>
 
-          {/* Top-right controls */}
           <div className="map-top-right">
-            <button className="fab-round" title="Legend" onClick={()=>setShowLegend(v=>!v)}>i</button>
-            <button className="fab-round" title="Center me" onClick={centerMe}>◎</button>
+            <button className="fab-round" onClick={()=>setShowLegend(v=>!v)} title="Legend">i</button>
+            <button className="fab-round" onClick={centerMe} title="Center me">◎</button>
             <button className="pill-top" onClick={()=>setExpanded(v=>!v)}>{expanded?'Collapse':'Expand'}</button>
           </div>
 
@@ -205,9 +186,4 @@ export default function MapPage() {
       <div style={{height:84}}/>
     </div>
   )
-}
-
-function showToast(msg){
-  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
-  document.body.appendChild(t); setTimeout(()=>t.remove(),2000)
 }

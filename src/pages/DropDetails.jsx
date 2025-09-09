@@ -23,8 +23,8 @@ export default function DropDetails(){
 
   useEffect(()=>{
     if (drop && myPos){
-      const lat = drop.lat ?? myPos[0]
-      const lng = drop.lng ?? myPos[1]
+      const lat = Number.isFinite(drop.lat) ? drop.lat : myPos[0]
+      const lng = Number.isFinite(drop.lng) ? drop.lng : myPos[1]
       setDist(haversine(myPos[0], myPos[1], lat, lng))
     }
   }, [drop, myPos])
@@ -36,18 +36,14 @@ export default function DropDetails(){
 
   function claim(){
     if (!canClaim){
-      showToast(`Too far – get within ${drop.radius} m to claim`)
+      toast(`Too far – get within ${drop.radius} m to claim`)
       return
     }
     addToWallet(drop)
-    showToast('Drop Claimed')
+    toast('Drop Claimed')
     setTimeout(()=>navigate('/'), 600)
   }
-
-  function showOnMap(){
-    setFocus(drop.id) // sporoči mapi
-    navigate('/')     // odpri mapo
-  }
+  function showOnMap(){ setFocus(drop.id); navigate('/') }
 
   return (
     <div className="page-wrap" style={{padding:'16px'}}>
@@ -78,18 +74,12 @@ export default function DropDetails(){
           </button>
           <button className="btn ghost" onClick={showOnMap}>Show on map</button>
         </div>
-
-        {!always && !canClaim && dist!=null &&
-          <div style={{color:'var(--yellow)', fontSize:12, marginTop:10}}>
-            Too far – get within {drop.radius} m to claim
-          </div>
-        }
       </div>
     </div>
   )
 }
 
-function showToast(msg){
+function toast(msg){
   const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
   document.body.appendChild(t); setTimeout(()=>t.remove(),2000)
 }

@@ -7,10 +7,7 @@ export default function DropsPage(){
   const setFocus = useStore(s=>s.setFocus)
   const navigate = useNavigate()
 
-  const showOnMap = (id)=>{
-    setFocus(id)   // povej mapi, kaj naj fokusira
-    navigate('/')  // samo pojdi na map
-  }
+  const showOnMap = (id)=>{ setFocus(id); navigate('/') }
 
   return (
     <div className="page-wrap">

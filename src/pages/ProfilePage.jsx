@@ -2,28 +2,38 @@ import React from 'react'
 import { useStore } from '../store'
 
 export default function ProfilePage(){
-  const { claimed, rion, used } = useStore.getState().stats()
+  const stats = useStore(s=>s.stats)
+
   return (
     <div className="page-wrap">
-      <div className="header"><div className="title">Profile</div></div>
-
-      <div className="drop-card" style={{display:'grid', gap:6}}>
-        <div style={{fontWeight:900, fontSize:18}}>Matevz</div>
-        <div style={{color:'var(--muted)'}}>matevz@realdrophunt.com</div>
+      <div className="header">
+        <div className="title">Profile</div>
+        <div className="subtitle">matevz@realdrophunt.com</div>
       </div>
 
-      <div className="drop-card" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,textAlign:'center'}}>
-        <div><div style={{fontWeight:900,fontSize:18}}>{claimed}</div><div style={{color:'var(--muted)'}}>Drops Claimed</div></div>
-        <div><div style={{fontWeight:900,fontSize:18}}>{rion}</div><div style={{color:'var(--muted)'}}>RION Earned</div></div>
-        <div><div style={{fontWeight:900,fontSize:18}}>{used}</div><div style={{color:'var(--muted)'}}>Rewards Used</div></div>
-      </div>
+      <div className="drop-card" style={{gap:12}}>
+        <div className="row" style={{justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontWeight:900}}>DropX</div>
+            <div style={{color:'#7F93A8', fontSize:12}}>Powered by RealDropHunt</div>
+          </div>
+          <button className="btn neon">Logout</button>
+        </div>
 
-      <div className="drop-card">
-        <div className="row"><div>Location Services</div><div><span className="badge ok">ON</span></div></div>
-      </div>
-
-      <div style={{padding:'0 16px 100px'}}>
-        <button className="btn neon" style={{width:'100%'}}>Logout</button>
+        <div className="row" style={{gap:12, marginTop:8}}>
+          <div className="stat">
+            <div className="stat-value">{stats.dropsClaimed}</div>
+            <div className="stat-label">Drops Claimed</div>
+          </div>
+          <div className="stat">
+            <div className="stat-value">{stats.rionEarned}</div>
+            <div className="stat-label">RION Earned</div>
+          </div>
+          <div className="stat">
+            <div className="stat-value">{stats.rewardsUsed}</div>
+            <div className="stat-label">Rewards Used</div>
+          </div>
+        </div>
       </div>
     </div>
   )
